@@ -2,6 +2,7 @@
 
 import argparse
 import re
+from textwrap import wrap
 
 from collections import deque
 
@@ -28,7 +29,10 @@ class NodeDef:
         return len(self.leading)
 
     def __str__(self):
-        return self.text
+        text = self.text.replace('"', r'\"')
+        lines = wrap(text, 30)
+        content = r'\n'.join(lines)
+        return '"{}"'.format(content)
 
 
 class GraphCollector(object):
@@ -66,5 +70,5 @@ for filename in args.filename:
 
 print "digraph {"
 for edge in collector.edges:
-    print '"{}" -> "{}";'.format(edge[0], edge[1])
+    print '{} -> {};'.format(edge[0], edge[1])
 print "}"
