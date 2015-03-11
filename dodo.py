@@ -1,4 +1,3 @@
-
 def task_test():
     return {
         'actions': ['markgraph.py test.txt'],
