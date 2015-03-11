@@ -13,17 +13,24 @@ parser.add_argument('filename', type=unicode, nargs='+',
 args = parser.parse_args()
 
 class NodeDef:
-    regex = re.compile(r'^(\s*)[*] (.*)$')
+    regex = re.compile(r'^(\s*)([*+-]|\d+\.) (.*)$')
 
     def __init__(self, string):
         self.match = self.regex.match(string)
         if self.match:
             self.leading = self.match.group(1)
-            self.text = self.match.group(2).strip()
+            self.nodetype = self.match.group(2)
+            self.text = self.match.group(3).strip()
 
     def __nonzero__(self):
         return bool(self.match)
 
+    def find_parent(self, history):
+        for predecessor in history:
+            if predecessor.indent < self.indent:
+                return predecessor
+        else:
+            return None
     @property
     def indent(self):
         return len(self.leading)
@@ -49,17 +56,10 @@ class GraphCollector(object):
             node = NodeDef(line)
             if node:
                 self.nodes[node.text] = node
-                parent = self.find_parent(node, history)
+                parent = node.find_parent(history)
                 history.appendleft(node)
                 if parent:
                     self.edges.add((parent, node))
-
-    def find_parent(self, node, history):
-        for predecessor in history:
-            if predecessor.leading < node.leading:
-                return predecessor
-        else:
-            return None
 
 
 collector = GraphCollector()
