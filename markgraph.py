@@ -52,7 +52,7 @@ class GraphCollector(object):
 
     def find_parent(self, node, history):
         for predecessor in history:
-            if predecessor.leading == node.leading:
+            if predecessor.leading < node.leading:
                 return predecessor
         else:
             return None
