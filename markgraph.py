@@ -69,7 +69,7 @@ class Edge(object):
 
 
 class Graph(object):
-    template = """digraph { {nodes}\n\n{edges} }"""
+    template = """digraph {{ {nodes}\n\n{edges} }}"""
 
     def __init__(self, label):
         self.label = label
@@ -100,26 +100,22 @@ class GraphCollector(object):
             return None
 
     def process(self, thefile):
+        graph = Graph(thefile)
         history = deque()
         for line in thefile:
             node = self.identify_line(line)
             if node:
-                self.nodes[node.text] = node
+                graph.nodes.add(node)
                 parent = node.find_parent(history)
                 history.appendleft(node)
                 if parent:
-                    self.edges.add(Edge(parent, node))
+                    graph.edges.add(Edge(parent, node))
+        return graph
 
 
 collector = GraphCollector()
 
 for filename in args.filename:
     with open(filename) as f:
-        collector.process(f)
-
-print "digraph {"
-for node in collector.nodes.values():
-    print str(node)
-for edge in collector.edges:
-    print edge
-print "}"
+        graph = collector.process(f)
+        print graph
