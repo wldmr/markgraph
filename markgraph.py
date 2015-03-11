@@ -58,6 +58,31 @@ class SequentialNode(NodeDef):
         else:
             return None
 
+
+class Edge(object):
+    def __init__(self, tail, head):
+        self.tail = tail
+        self.head = head
+
+    def __str__(self):
+        return '{} -> {};\n'.format(self.tail, self.head)
+
+
+class Graph(object):
+    template = """digraph { {nodes}\n\n{edges} }"""
+
+    def __init__(self, label):
+        self.label = label
+        self.nodes = set()
+        self.edges = set()
+
+    def __str__(self):
+        return self.template.format(
+                label=self.label,
+                nodes="\n".join(map(str, self.nodes)),
+                edges="\n".join(map(str, self.edges)))
+
+
 class GraphCollector(object):
     def __init__(self):
         self.nodes = dict()
@@ -83,7 +108,7 @@ class GraphCollector(object):
                 parent = node.find_parent(history)
                 history.appendleft(node)
                 if parent:
-                    self.edges.add((parent, node))
+                    self.edges.add(Edge(parent, node))
 
 
 collector = GraphCollector()
@@ -96,5 +121,5 @@ print "digraph {"
 for node in collector.nodes.values():
     print str(node)
 for edge in collector.edges:
-    print '{} -> {};'.format(edge[0], edge[1])
+    print edge
 print "}"
