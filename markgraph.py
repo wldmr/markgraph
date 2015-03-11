@@ -69,6 +69,8 @@ for filename in args.filename:
         collector.process(f)
 
 print "digraph {"
+for node in collector.nodes.values():
+    print str(node)
 for edge in collector.edges:
     print '{} -> {};'.format(edge[0], edge[1])
 print "}"
