@@ -91,7 +91,9 @@ class DotObject(object):
 class Node(DotObject):
     def __str__(self):
         attrs = ", ".join('{}="{}"'.format(k, v) for (k,v) in self.attributes.items())
-        return '{} [label="{}" {}];'.format(self.ref(), self.label, attrs)
+        label = self.label.replace('"', r'\"')
+        label = r'\n'.join(wrap(label, 20))
+        return '{} [label="{}" {}];'.format(self.ref(), label, attrs)
 
 class Edge(DotObject):
     def __init__(self, tail, head, **kwargs):
