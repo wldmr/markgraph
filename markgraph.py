@@ -13,24 +13,21 @@ parser.add_argument('filename', type=unicode, nargs='+',
 args = parser.parse_args()
 
 class NodeDef:
-    regex = re.compile(r'^(\s*)([*+-]|\d+\.) (.*)$')
+    """Subclasses must provide a 2-group `regex` attribute
+    and define a find_parent method.
+
+    Example: `regex = re.compile(r'^(\s*)[*+-] (.*)$')`
+    """
 
     def __init__(self, string):
         self.match = self.regex.match(string)
         if self.match:
             self.leading = self.match.group(1)
-            self.nodetype = self.match.group(2)
-            self.text = self.match.group(3).strip()
+            self.text = self.match.group(2).strip()
 
     def __nonzero__(self):
         return bool(self.match)
 
-    def find_parent(self, history):
-        for predecessor in history:
-            if predecessor.indent < self.indent:
-                return predecessor
-        else:
-            return None
     @property
     def indent(self):
         return len(self.leading)
@@ -41,6 +38,25 @@ class NodeDef:
         content = r'\n'.join(lines)
         return '"{}"'.format(content)
 
+class ChoiceNode(NodeDef):
+    regex = re.compile(r'^(\s*)[*+-] (.*)$')
+
+    def find_parent(self, history):
+        for predecessor in history:
+            if predecessor.indent < self.indent:
+                return predecessor
+        else:
+            return None
+
+class SequentialNode(NodeDef):
+    regex = re.compile(r'^(\s*)\d+\. (.*)$')
+
+    def find_parent(self, history):
+        for predecessor in history:
+            if predecessor.indent <= self.indent:
+                return predecessor
+        else:
+            return None
 
 class GraphCollector(object):
     def __init__(self):
@@ -50,10 +66,18 @@ class GraphCollector(object):
 
         self.outfiles = set()
 
+    def identify_line(self, line):
+        for Class in (ChoiceNode, SequentialNode):
+            parsed = Class(line)
+            if parsed:
+                return parsed
+        else:
+            return None
+
     def process(self, thefile):
         history = deque()
         for line in thefile:
-            node = NodeDef(line)
+            node = self.identify_line(line)
             if node:
                 self.nodes[node.text] = node
                 parent = node.find_parent(history)
