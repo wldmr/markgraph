@@ -40,7 +40,7 @@ class LineDef:
             return None
 
     def is_parent(self, other):
-        return other.indent < self.indent
+        return other.depth < self.depth
 
     def history_add(self, other):
         self.history.appendleft(other)
@@ -49,7 +49,7 @@ class LineDef:
         self.history.clear()
 
     @property
-    def indent(self):
+    def depth(self):
         return len(self.leading)
 
     def __str__(self):
@@ -68,7 +68,7 @@ class SequentialNode(NodeDef):
     regex = re.compile(r'^(\s*)\d+\. (.*)$')
 
     def is_parent(self, other):
-        return other.indent <= self.indent and self is not other
+        return other.depth <= self.depth and self is not other
 
 class DocumentStructure(LineDef):
     history = deque()
@@ -146,8 +146,9 @@ class GraphCollector(object):
             return None
 
     def process(self, thefile):
-        headline = docstart = DocumentStart(thefile.name)
-        self.graphs[headline] = Graph(label=headline.text)
+        headline = DocumentStart(thefile.name)
+        docgraph = Graph(label=headline.text)
+        self.graphs[headline] = currentgraph = docgraph
 
         for line in thefile:
             theline = self.identify_line(line)
@@ -169,7 +170,7 @@ class GraphCollector(object):
                     currentgraph.edges.append(edge)
 
 
-        return self.graphs[docstart]
+        return docgraph
 
 
 collector = GraphCollector()
