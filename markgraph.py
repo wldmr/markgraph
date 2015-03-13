@@ -91,9 +91,12 @@ class DotObject(object):
 class Node(DotObject):
     def __str__(self):
         attrs = ", ".join('{}="{}"'.format(k, v) for (k,v) in self.attributes.items())
+        return '{} [{}];'.format(self.ref(), attrs)
+
+    def ref(self):
         label = self.label.replace('"', r'\"')
         label = r'\n'.join(wrap(label, 20))
-        return '{} [label="{}" {}];'.format(self.ref(), label, attrs)
+        return '"' + label + '"'
 
 class Edge(DotObject):
     def __init__(self, tail, head, **kwargs):
@@ -110,13 +113,13 @@ class Graph(DotObject):
     def __init__(self, label, parent=None, **kwargs):
         DotObject.__init__(self, label, **kwargs)
         self.parent = parent
-        self.nodes = list()
-        self.edges = list()
-        self.subgraphs = list()
+        self.nodes = set()
+        self.edges = set()
+        self.subgraphs = set()
 
     def subgraph(self, label):
         g = Graph(label, parent=self)
-        self.subgraphs.append(g)
+        self.subgraphs.add(g)
         return g
 
     def __str__(self):
@@ -136,6 +139,7 @@ class GraphCollector(object):
     def __init__(self):
         self.graphs = dict()
         self.nodes = dict()
+        self.node_subgraph = dict()
 
     def identify_line(self, line):
         for Class in (ChoiceNode, SequentialNode, Headline):
@@ -159,15 +163,27 @@ class GraphCollector(object):
                 currentgraph = parentgraph.subgraph(label=headline.text)
                 self.graphs[headline] = currentgraph
             elif isinstance(theline, NodeDef):
-                node = self.nodes.get(theline.text, Node(theline.text))
-                self.nodes[theline.text] = node
-                currentgraph.nodes.append(node)
+                try:
+                    node = self.nodes[theline.text]
+                except KeyError:
+                    node = Node(theline.text)
+                    self.nodes[theline.text] = node
+
+                currentgraph.nodes.add(node)
+
+                # Update the node association
+                # (lower depth == we define the node in this graph)
+                olddepth, oldgraph = self.node_subgraph.get(node, (theline.depth, currentgraph))
+                if theline.depth < olddepth:
+                    oldgraph.nodes.remove(node)
+                    currentgraph.nodes.add(node)
+                    self.node_subgraph[node] = (theline.depth, currentgraph)
 
                 parentline = theline.find_parent()
                 if parentline:
                     parentnode = self.nodes[parentline.text]
                     edge = Edge(parentnode, node)
-                    currentgraph.edges.append(edge)
+                    currentgraph.edges.add(edge)
 
 
         return docgraph
