@@ -4,6 +4,7 @@
 import argparse
 import re
 from textwrap import wrap
+from subprocess import Popen, PIPE
 
 from collections import deque
 
@@ -22,7 +23,7 @@ class LineDef:
     history = deque()
 
     def __init__(self, string):
-        self.match = self.regex.match(string)
+        self.match = self.regex.search(string)
         if self.match:
             self.leading = self.match.group(1)
             self.text = self.match.group(2).strip()
@@ -74,11 +75,14 @@ class DocumentStructure(LineDef):
     history = deque()
 
 class DocumentStart(DocumentStructure):
-    regex = re.compile(r'^()(.*?)$')
+    regex = re.compile(r'^()(.*?)(?:\..+)?$')
 
 class Headline(DocumentStructure):
     regex = re.compile(r'^(#+)(.*?)(?:#+)?$')
 
+class FilenameMention(LineDef):
+    history = deque()
+    regex = re.compile(r'\bgraph_(?P<substring>.+?)\.(?P<filetype>.+?)\b')
 
 class DotObject(object):
     def __init__(self, label, **kwargs):
@@ -123,7 +127,13 @@ class Graph(DotObject):
         return g
 
     def __str__(self):
-        keyword = "subgraph" if self.parent else "digraph"
+        return self.to_dot()
+
+    def to_dot(self, standalone=None):
+        if standalone is None:
+            keyword = "subgraph" if self.parent else "digraph"
+        else:
+            keyword = "digraph" if standalone else "subgraph"
         attrs = "\n".join('{}="{}"'.format(k, v) for (k,v) in self.attributes.items())
         return self.template.format(
                 keyword=keyword,
@@ -142,7 +152,7 @@ class GraphCollector(object):
         self.node_subgraph = dict()
 
     def identify_line(self, line):
-        for Class in (ChoiceNode, SequentialNode, Headline):
+        for Class in (ChoiceNode, SequentialNode, Headline, FilenameMention):
             parsed = Class(line)
             if parsed:
                 return parsed
@@ -185,13 +195,22 @@ class GraphCollector(object):
                     edge = Edge(parentnode, node)
                     currentgraph.edges.add(edge)
 
+    def shipout(self):
+        for item in FilenameMention.history:
+            for headline, graph in self.graphs.items():
+                if item.match.group('substring') in headline.text:
+                    dotstring = self.graphs[headline].to_dot(standalone=True)
+                    filetype = item.match.group('filetype')
+                    filename = item.match.group(0)
+                    self.call_dot(filename, filetype, dotstring)
 
-        return docgraph
-
+    def call_dot(self, filename, filetype, string):
+        p = Popen(['dot', '-T'+filetype, '-o'+filename], stdin=PIPE)
+        p.communicate(string)
 
 collector = GraphCollector()
 
 for filename in args.filename:
     with open(filename) as f:
-        graph = collector.process(f)
-        print graph
+        collector.process(f)
+        collector.shipout()
