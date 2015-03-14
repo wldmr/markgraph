@@ -207,7 +207,7 @@ class GraphCollector(object):
                     thegraph = self.graphs[headline]
                     theedges = set()
                     for (head, tail), edge in self.edges.items():
-                        if head in thegraph and tail in thegraph:
+                        if head in thegraph:
                             theedges.add(edge)
                     thegraph.edges = theedges
                     thegraph.attributes['concentrate'] = True
