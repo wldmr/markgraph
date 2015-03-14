@@ -174,9 +174,13 @@ class GraphCollector(object):
 
         for line in thefile:
             theline = self.identify_line(line)
+
+            # Reset whenever we interrupt the list.
+            if not isinstance(theline, NodeDef):
+                NodeDef.history.clear()
+
             if isinstance(theline, Headline):
                 headline = theline
-                NodeDef.history.clear()
                 parentgraph = self.graphs[headline.find_parent()]
                 currentgraph = parentgraph.subgraph(label=headline.text)
                 self.graphs[headline] = currentgraph
@@ -211,7 +215,7 @@ class GraphCollector(object):
                     thegraph = self.graphs[headline]
                     theedges = set()
                     for (head, tail), edge in self.edges.items():
-                        if head in thegraph:
+                        if head in thegraph or tail in thegraph:
                             theedges.add(edge)
                     thegraph.edges = theedges
                     thegraph.attributes['concentrate'] = True
