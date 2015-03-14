@@ -5,6 +5,7 @@ import argparse
 import re
 from textwrap import wrap
 from subprocess import Popen, PIPE
+from hashlib import md5
 
 from collections import deque, OrderedDict
 
@@ -90,7 +91,7 @@ class DotObject(object):
         self.attributes = kwargs
 
     def ref(self):
-        return id(self.label)
+        return md5(self.label).hexdigest()
 
 class Node(DotObject):
     def __str__(self):
@@ -146,7 +147,7 @@ class Graph(DotObject):
                 keyword=keyword,
                 label=self.label,
                 attrs=attrs,
-                id=("cluster_{}" if cluster else "{}").format(id(self.label)),
+                id=("cluster_{}" if cluster else "{}").format(self.ref()),
                 nodes="\n".join(map(str, self.nodes)),
                 subgraphs="\n".join(map(str, self.subgraphs)),
                 edges="\n".join(map(str, self.edges)))
