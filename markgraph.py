@@ -177,21 +177,22 @@ class GraphCollector(object):
                 currentgraph = parentgraph.subgraph(label=headline.text)
                 self.graphs[headline] = currentgraph
             elif isinstance(theline, NodeDef):
-                try:
-                    node = self.nodes[theline.text]
-                except KeyError:
+                node = self.nodes.get(theline.text)
+                if not node:
                     node = Node(theline.text)
                     self.nodes[theline.text] = node
-
-                currentgraph.nodes.add(node)
-
-                # Update the node association
-                # (lower depth == we define the node in this graph)
-                olddepth, oldgraph = self.node_subgraph.get(node, (theline.depth, currentgraph))
-                if theline.depth < olddepth:
-                    oldgraph.nodes.remove(node)
-                    currentgraph.nodes.add(node)
                     self.node_subgraph[node] = (theline.depth, currentgraph)
+                    currentgraph.nodes.add(node)
+                else:
+                    # Update the node association
+                    # (lower depth == we define the node in this graph)
+                    olddepth, oldgraph = self.node_subgraph[node]
+
+                    if theline.depth < olddepth:
+                        currentgraph.nodes.add(node)
+                        oldgraph.nodes.remove(node)
+                        self.node_subgraph[node] = (theline.depth, currentgraph)
+
 
                 parentline = theline.find_parent()
                 if parentline:
