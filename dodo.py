@@ -1,10 +1,6 @@
-def task_test():
+def task_Readme():
     return {
-        'actions': ['markgraph.py test.txt', 'markdown_py test.txt > test.html'],
+        'actions': ['markgraph.py Readme.txt', 'pandoc Readme.txt > Readme.html'],
+        'file_dep': ['markgraph.py', 'Readme.txt'],
         'verbosity': 2,
-    }
-
-def task_graph():
-    return {
-        'actions': ['markgraph.py test.txt'],
     }
