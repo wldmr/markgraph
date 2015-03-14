@@ -130,6 +130,8 @@ class Graph(DotObject):
         return self.to_dot()
 
     def to_dot(self, standalone=None):
+    def __contains__(self, node):
+        return node in self.nodes or any(node in sub for sub in self.subgraphs)
         if standalone is None:
             keyword = "subgraph" if self.parent else "digraph"
         else:
@@ -149,6 +151,7 @@ class GraphCollector(object):
     def __init__(self):
         self.graphs = dict()
         self.nodes = dict()
+        self.edges = dict()
         self.node_subgraph = dict()
 
     def identify_line(self, line):
@@ -193,13 +196,21 @@ class GraphCollector(object):
                 if parentline:
                     parentnode = self.nodes[parentline.text]
                     edge = Edge(parentnode, node)
-                    currentgraph.edges.add(edge)
+                    self.edges[(parentnode, node)] = edge
 
     def shipout(self):
         for item in FilenameMention.history:
             for headline, graph in self.graphs.items():
                 if item.match.group('substring') in headline.text:
-                    dotstring = self.graphs[headline].to_dot(standalone=True)
+                    thegraph = self.graphs[headline]
+                    theedges = set()
+                    for (head, tail), edge in self.edges.items():
+                        if head in thegraph and tail in thegraph:
+                            theedges.add(edge)
+                    thegraph.edges = theedges
+                    thegraph.attributes['concentrate'] = True
+                    dotstring = thegraph.to_dot(standalone=True)
+                    thegraph.edges = set()  # reset, so it doesn't interfere with other graphs.
                     filetype = item.match.group('filetype')
                     filename = item.match.group(0)
                     self.call_dot(filename, filetype, dotstring)
