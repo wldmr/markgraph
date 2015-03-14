@@ -112,7 +112,7 @@ class Edge(DotObject):
         return '{} -> {};'.format(self.tail.ref(), self.head.ref())
 
 class Graph(DotObject):
-    template = """{keyword} cluster_{id} {{ label="{label}";\n{attrs}\n\n{nodes}\n\n{edges}\n\n{subgraphs} }}"""
+    template = """{keyword} {id} {{ label="{label}";\n{attrs}\n\n{nodes}\n\n{edges}\n\n{subgraphs} }}"""
 
     def __init__(self, label, parent=None, **kwargs):
         DotObject.__init__(self, label, **kwargs)
@@ -129,9 +129,10 @@ class Graph(DotObject):
     def __str__(self):
         return self.to_dot()
 
-    def to_dot(self, standalone=None):
     def __contains__(self, node):
         return node in self.nodes or any(node in sub for sub in self.subgraphs)
+
+    def to_dot(self, standalone=None, cluster=True):
         if standalone is None:
             keyword = "subgraph" if self.parent else "digraph"
         else:
@@ -141,7 +142,7 @@ class Graph(DotObject):
                 keyword=keyword,
                 label=self.label,
                 attrs=attrs,
-                id=id(self.label),
+                id=("cluster_{}" if cluster else "{}").format(id(self.label)),
                 nodes="\n".join(map(str, self.nodes)),
                 subgraphs="\n".join(map(str, self.subgraphs)),
                 edges="\n".join(map(str, self.edges)))
