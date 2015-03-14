@@ -112,7 +112,11 @@ class Edge(DotObject):
         return '{} -> {};'.format(self.tail.ref(), self.head.ref())
 
 class Graph(DotObject):
-    template = """{keyword} {id} {{ label="{label}";\n{attrs}\n\n{nodes}\n\n{edges}\n\n{subgraphs} }}"""
+    template = """{keyword} {id} {{
+        label="{label}";
+        fontsize=10;
+        node [fontsize=10, shape=box, style=rounded];
+        {attrs}\n\n{nodes}\n\n{edges}\n\n{subgraphs} }}"""
 
     def __init__(self, label, parent=None, **kwargs):
         DotObject.__init__(self, label, **kwargs)
