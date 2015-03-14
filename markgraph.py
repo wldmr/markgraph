@@ -6,7 +6,7 @@ import re
 from textwrap import wrap
 from subprocess import Popen, PIPE
 
-from collections import deque
+from collections import deque, OrderedDict
 
 parser = argparse.ArgumentParser(description='Transform outlines into graphs.')
 parser.add_argument('filename', type=unicode, nargs='+',
@@ -150,7 +150,7 @@ class Graph(DotObject):
 
 class GraphCollector(object):
     def __init__(self):
-        self.graphs = dict()
+        self.graphs = OrderedDict()
         self.nodes = dict()
         self.edges = dict()
         self.node_subgraph = dict()
@@ -216,6 +216,7 @@ class GraphCollector(object):
                     filetype = item.match.group('filetype')
                     filename = item.match.group(0)
                     self.call_dot(filename, filetype, dotstring)
+                    break
 
     def call_dot(self, filename, filetype, string):
         p = Popen(['dot', '-T'+filetype, '-o'+filename], stdin=PIPE)
