@@ -1,4 +1,7 @@
 *.pdf
+*.svg
+*.png
 *.txt
+*.html
 .doit.db
 .lvimrc
