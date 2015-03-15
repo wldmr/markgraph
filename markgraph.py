@@ -143,9 +143,10 @@ class Graph(DotObject):
         else:
             keyword = "digraph" if standalone else "subgraph"
         attrs = "\n".join('{}="{}"'.format(k, v) for (k,v) in self.attributes.items())
+        label = self.label.replace('  ', r'\n')
         return self.template.format(
                 keyword=keyword,
-                label=self.label,
+                label=label,
                 attrs=attrs,
                 id=("cluster_{}" if cluster else "{}").format(self.ref()),
                 nodes="\n".join(map(str, self.nodes)),

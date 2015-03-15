@@ -39,6 +39,20 @@ A node uniquely belongs to the cluster where it appears at the lowest nesting le
 
 * This belongs to `defining-clusters`
 
+If you want the cluster label to linebreak at specific points, insert two spaces where the linebreak should go. The double spaces won't show up in the HTML-output, because HTML collapses spaces.
+
+Thus
+
+```{ .markdown }
+# Some super-long headline  that might look too wide  in the resulting graph #
+```
+
+will render as
+
+    Some super-long headline
+    that might look too wide
+     in the resulting graph
+
 #### Subcluster ####
 
 * While this belongs to `Subcluster`
