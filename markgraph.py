@@ -60,13 +60,13 @@ class LineDef:
         content = r'\n'.join(lines)
         return '"{}"'.format(content)
 
-class NodeDef(LineDef):
+class NodeRef(LineDef):
     history = deque()  # All nodes share the same history.
 
-class ChoiceNode(NodeDef):
+class ChoiceRef(NodeRef):
     regex = re.compile(r'^(\s*)[*+-] (.*)$')
 
-class SequentialNode(NodeDef):
+class SequencialRef(NodeRef):
     regex = re.compile(r'^(\s*)\d+\. (.*)$')
 
     def is_parent(self, other):
@@ -162,7 +162,7 @@ class GraphCollector(object):
         self.node_subgraph = dict()
 
     def identify_line(self, line):
-        for Class in (ChoiceNode, SequentialNode, Headline, FilenameMention):
+        for Class in (ChoiceRef, SequencialRef, Headline, FilenameMention):
             parsed = Class(line)
             if parsed:
                 return parsed
@@ -178,15 +178,15 @@ class GraphCollector(object):
             theline = self.identify_line(line)
 
             # Reset whenever we interrupt the list.
-            if not isinstance(theline, NodeDef):
-                NodeDef.history.clear()
+            if not isinstance(theline, NodeRef):
+                NodeRef.history.clear()
 
             if isinstance(theline, Headline):
                 headline = theline
                 parentgraph = self.graphs[headline.find_parent()]
                 currentgraph = parentgraph.subgraph(label=headline.text)
                 self.graphs[headline] = currentgraph
-            elif isinstance(theline, NodeDef):
+            elif isinstance(theline, NodeRef):
                 node = self.nodes.get(theline.text)
                 if not node:
                     node = Node(theline.text)
