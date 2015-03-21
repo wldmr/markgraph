@@ -18,7 +18,7 @@ Run `python markgraph.py -h` for usage notes.
 
 You can write unordered lists using `*`, `-`, or `+` as bullets; nesting implies graph edges. Ordered lists (1., 2.) work as well, but here, edges are defined by subsequent items, as well as nesting.
 
-* Unordered lists to represent choices
+* |Unordered lists to represent choices|
     * Choice 1
     * Choice 2
     * Choice 3
