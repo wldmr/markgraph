@@ -18,12 +18,12 @@ Run `python markgraph.py -h` for usage notes.
 
 You can write unordered lists using `*`, `-`, or `+` as bullets; nesting implies graph edges. Ordered lists (1., 2.) work as well, but here, edges are defined by subsequent items, as well as nesting.
 
-* |Unordered lists to represent choices|
-    * Choice 1
-    * Choice 2
-    * Choice 3
-* Ordered lists to represent sequences
-    1. First Item
+* [Unordered lists to represent choices](!)
+    * /Choice 1/
+    * /Choice 2/
+    * /Choice 3/
+* [Ordered lists to represent sequences](!)
+    1. [First Item]()
         1. Nesting works as expected
         2. … kinda …
     2. Second Item
@@ -33,7 +33,15 @@ You can write unordered lists using `*`, `-`, or `+` as bullets; nesting implies
 
 ### Defining Clusters (defining-clusters) ###
 
-To visually group nodes, markgraph turns section headers into (nested) subgraphs.  Be sure to include unique words in each section name you want to output.  See next section for the reason.
+<style>
+  markgraph-node {
+    font-weight: bold;
+  }
+</style>
+
+To [visually group nodes](!Visually Grouping Nodes), markgraph turns [section headers] into (nested) [subgraphs]().  Be sure to include unique words in each section name you want to output.  See next section for the reason.
+
+When you [Talk to Kevin](!) you can either [Help Kevin](), [Refuse to help Kevin]() or [Be non-commital to Kevin](). If you [Help Kevin](:) then [he calls the cops](). If you are [non-commital](:), he will [do something else]()
 
 A node uniquely belongs to the cluster where it appears at the lowest nesting level.
 
@@ -43,9 +51,7 @@ If you want the cluster label to linebreak at specific points, insert two spaces
 
 Thus
 
-```{ .markdown }
-# Some super-long headline  that might look too wide  in the resulting graph #
-```
+    # Some super-long headline  that might look too wide  in the resulting graph #
 
 will render as
 
