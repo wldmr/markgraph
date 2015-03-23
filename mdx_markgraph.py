@@ -44,6 +44,7 @@ class MarkgraphOutlineProcessor(Treeprocessor):
                 section = etree.SubElement(root, 'section')
                 section.set('title', elem.text)
                 elem.tag = "h1"
+                elem.text = str(depth) + " " + elem.text
                 sections.append(section)
             root.remove(elem)
             section.append(elem)
@@ -53,6 +54,8 @@ class MarkgraphOutlineProcessor(Treeprocessor):
 
 
 class MarkgraphTreeProcessor(Treeprocessor):
+
+    Edge = namedtuple("Edge", 'tail, head')
 
     def run(self, root):
         # collect edges
@@ -68,7 +71,8 @@ class MarkgraphTreeProcessor(Treeprocessor):
                 if not href or href.startswith("?"):  # We're linking two graph nodes
                     if context is None:
                         raise Exception("Hey, no context yet: <{e.tag}>{e.text}</{e.tag}>".format(e=elem))
-                    edges.add((context.text, elem.text))
+                    edges.add(self.Edge(context.text, elem.text))
+                    elem.set('markgraph-type', "node-reference")
                 elif href.startswith("!"):  # A node definition
                     context = elem
                     elem.set('markgraph-cluster', cluster.get('title'))
@@ -80,15 +84,70 @@ class MarkgraphTreeProcessor(Treeprocessor):
         for cluster in root.iterfind(".//section[@markgraph-type='cluster']"):
             for info in GraphNamePattern.history:
                 if info.query in cluster.get('title'):
-                    self.output(cluster, info)
-            #string = """digraph {{ {edges} }}""".format(
-            #    edges = '\n'.join('"{}" -> "{}";'.format(*e) for e in edges),
-            #)
-            #call_dot("test.svg", 'svg', string)
+                    print cluster.get('title'), info.query
+                    dot = self.cluster2dot(cluster, edges, True)
+                    with open(info.filename+".dot", 'w') as f:
+                        f.write(dot)
+                    call_dot(info.filename, info.filetype, dot)
 
-    def output(self, cluster, info):
-        nodes = cluster.findall("./a[@markgraph-type='node']")
-        subclusters = cluster.findall("./*[@markgraph-type='cluster']")
+    def cluster2dot(self, cluster, edges, standalone=False):
+        keyword = "digraph" if standalone else "subgraph"
+        dot = "{} cluster_{} ".format(keyword, id(cluster)) + " {\n"
+
+        # Attributes
+        #for k, v in cluster.items():
+        #    dot += '{}="{}";\n'.format(k, v)
+
+        dot += 'label="{}";\n'.format(cluster.get('title'))
+
+        # Nodes defined here
+        xpath = ".//a[@markgraph-cluster='{}']"
+        xpath = xpath.format(cluster.get('title'))
+        ournodes = set(n.text for n in cluster.findall(xpath))
+        for node in ournodes:
+            dot += '"{}";\n'.format(node)
+
+        # Subclusters
+        for subcluster in cluster.findall("./*[@markgraph-type='cluster']"):
+            dot += self.cluster2dot(subcluster, edges)
+
+
+        if standalone:
+            xpath = ".//a[@markgraph-type='node']"
+            xpath = xpath.format(cluster.get('title'))
+            allournodes = set(n.text for n in cluster.findall(xpath))
+
+            xpath = ".//a[@markgraph-type='node-reference']"
+            xpath = xpath.format(cluster.get('title'))
+            externals = set(n.text for n in cluster.findall(xpath))
+            externals -= allournodes
+
+            allnodes = allournodes | externals
+
+            inneredges = set()
+            outeredges = set()
+
+            for edge in edges:
+                if edge.tail in externals or edge.head in externals:
+                    outeredges.add(edge)
+                else:
+                    inneredges.add(edge)
+
+            for edge in inneredges:
+                dot += '"{0.tail}" -> "{0.head}";\n'.format(edge)
+
+            dot += "subgraph outside {\n"
+            dot += 'node [color=grey, fontcolor=grey];'
+            dot += 'edge [color=grey, fontcolor=grey];'
+            for node in externals:
+                dot += '"{}";\n'.format(node)
+            for edge in outeredges:
+                dot += '"{0.tail}" -> "{0.head}";\n'.format(edge)
+            dot += "}\n"
+
+        dot += "}\n\n"
+
+        return dot
 
 
 
