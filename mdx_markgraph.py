@@ -88,6 +88,8 @@ class MarkgraphTreeProcessor(Treeprocessor):
                     dot = self.cluster2dot(cluster, edges, True)
                     with open(info.filename+".dot", 'w') as f:
                         f.write(dot)
+                    with open(info.filename, 'w') as f:
+                        f.write(dot)
                     call_dot(info.filename, info.filetype, dot)
 
     def cluster2dot(self, cluster, edges, standalone=False):
@@ -114,24 +116,23 @@ class MarkgraphTreeProcessor(Treeprocessor):
 
         if standalone:
             xpath = ".//a[@markgraph-type='node']"
-            xpath = xpath.format(cluster.get('title'))
-            allournodes = set(n.text for n in cluster.findall(xpath))
+            nodes_internal = set(n.text for n in cluster.findall(xpath))
 
             xpath = ".//a[@markgraph-type='node-reference']"
-            xpath = xpath.format(cluster.get('title'))
-            externals = set(n.text for n in cluster.findall(xpath))
-            externals -= allournodes
+            nodes_external = set(n.text for n in cluster.findall(xpath))
+            nodes_external -= nodes_internal
 
-            allnodes = allournodes | externals
+            allnodes = nodes_internal | nodes_external
 
             inneredges = set()
             outeredges = set()
 
             for edge in edges:
-                if edge.tail in externals or edge.head in externals:
-                    outeredges.add(edge)
-                else:
-                    inneredges.add(edge)
+                if edge.tail in allnodes or edge.head in allnodes:
+                    if edge.tail in nodes_external or edge.head in nodes_external:
+                        outeredges.add(edge)
+                    else:
+                        inneredges.add(edge)
 
             for edge in inneredges:
                 dot += '"{0.tail}" -> "{0.head}";\n'.format(edge)
@@ -139,7 +140,7 @@ class MarkgraphTreeProcessor(Treeprocessor):
             dot += "subgraph outside {\n"
             dot += 'node [color=grey, fontcolor=grey];'
             dot += 'edge [color=grey, fontcolor=grey];'
-            for node in externals:
+            for node in nodes_external:
                 dot += '"{}";\n'.format(node)
             for edge in outeredges:
                 dot += '"{0.tail}" -> "{0.head}";\n'.format(edge)
